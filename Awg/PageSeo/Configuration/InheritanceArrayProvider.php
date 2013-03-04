@@ -26,7 +26,7 @@ class InheritanceArrayProvider implements \ArrayAccess
   function __construct($config, $defaults = array())
   {
     $this->config = $config;
-    $this->defaults = $defaults;
+    $this->defaults = $defaults ? : array();
   }
 
   /**
