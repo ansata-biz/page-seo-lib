@@ -22,46 +22,6 @@ class BasicRenderer implements RendererInterface
   }
 
   /**
-   * @param \Awg\PageSeo\Configuration\RouteConfiguration $configuration
-   * @param mixed $context
-   * @return string
-   */
-  public function renderText($configuration, $context)
-  {
-    return $this->engine->renderString($configuration->getText(), $context);
-  }
-
-  /**
-   * @param \Awg\PageSeo\Configuration\RouteConfiguration $configuration
-   * @param mixed $context
-   * @return string
-   */
-  public function renderTitle($configuration, $context)
-  {
-    return $this->engine->renderString($configuration->getTitle(), $context);
-  }
-
-  /**
-   * @param \Awg\PageSeo\Configuration\RouteConfiguration $configuration
-   * @param mixed $context
-   * @return string
-   */
-  public function renderDescription($configuration, $context)
-  {
-    return $this->engine->renderString($configuration->getDescription(), $context);
-  }
-
-  /**
-   * @param \Awg\PageSeo\Configuration\RouteConfiguration $configuration
-   * @param mixed $context
-   * @return string
-   */
-  public function renderKeywords($configuration, $context)
-  {
-    return $this->engine->renderString($configuration->getKeywords(), $context);
-  }
-
-  /**
    * @param string $string
    * @param mixed $context
    * @return string
@@ -69,5 +29,16 @@ class BasicRenderer implements RendererInterface
   public function renderString($string, $context)
   {
     return $this->engine->renderString($string, $context);
+  }
+
+  /**
+   * @param array $routeConfiguration
+   * @param $component
+   * @param mixed $context
+   * @return string
+   */
+  public function renderComponent($routeConfiguration, $component, $context)
+  {
+    return isset($routeConfiguration[$component]) ? $this->renderString($routeConfiguration[$component], $context) : null;
   }
 }

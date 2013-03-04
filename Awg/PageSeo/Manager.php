@@ -9,10 +9,8 @@ namespace Awg\PageSeo;
 
 class Manager implements ManagerInterface
 {
-  // protected $i18n;
-
   /**
-   * @var \Awg\PageSeo\Configuration\Factory\FactoryInterface
+   * @var array
    */
   protected $configuration;
 
@@ -27,7 +25,7 @@ class Manager implements ManagerInterface
   protected $routing;
 
   /**
-   * @param \Awg\PageSeo\Configuration\Factory\FactoryInterface $configuration
+   * @param array $configuration
    * @param \sfPatternRouting $routing
    * @param \Awg\PageSeo\Render\RendererInterface $renderer
    */
@@ -40,24 +38,16 @@ class Manager implements ManagerInterface
   }
 
   /**
-   * @param string $route
-   * @return \Awg\PageSeo\Configuration\RouteConfiguration
+   * @param string $routeName
+   * @return array
    */
-  public function getRouteConfiguration($route)
+  public function getRouteConfiguration($routeName)
   {
-//    if (!isset($this->routesConfiguration[$route]))
-//    {
-//      $routeConfig = sfConfig::get('app_seo_manager_'.$route, array());
-//      $routeConfig['route'] = $route;
-//
-//      $this->routesConfiguration[$route] = new awgPageSeo($routeConfig, $this->i18n);
-//    }
-
-    return $this->configuration->getRouteConfiguration($route);
+    return $this->configuration[$routeName];
   }
 
   /**
-   * @return Configuration\RouteConfiguration
+   * @return array
    */
   public function getCurrentRouteConfiguration()
   {
@@ -66,47 +56,49 @@ class Manager implements ManagerInterface
   }
 
   /**
-   * @param \Awg\PageSeo\Configuration\RouteConfiguration|string $route
+   * @param array|string $route
    * @param mixed $context
    * @return string
    */
   public function renderDescription($route, $context)
   {
-    $configuration = is_string($route) ? $this->configuration->getRouteConfiguration($route) : $route;
-    return $this->renderer->renderDescription($configuration, $context);
+    return $this->renderComponent($route, 'description', $context);
   }
 
   /**
-   * @param \Awg\PageSeo\Configuration\RouteConfiguration|string $route
+   * @param array|string $route
    * @param mixed $context
    * @return string
    */
   public function renderKeywords($route, $context)
   {
-    $configuration = is_string($route) ? $this->configuration->getRouteConfiguration($route) : $route;
-    return $this->renderer->renderKeywords($configuration, $context);
+    return $this->renderComponent($route, 'keywords', $context);
   }
 
   /**
-   * @param \Awg\PageSeo\Configuration\RouteConfiguration|string $route
+   * @param array|string $route
    * @param mixed $context
    * @return string
    */
   public function renderText($route, $context)
   {
-    $configuration = is_string($route) ? $this->configuration->getRouteConfiguration($route) : $route;
-    return $this->renderer->renderText($configuration, $context);
+    return $this->renderComponent($route, 'text', $context);
   }
 
   /**
-   * @param \Awg\PageSeo\Configuration\RouteConfiguration|string $route
+   * @param array|string $route
    * @param mixed $context
    * @return string
    */
   public function renderTitle($route, $context)
   {
-    $configuration = is_string($route) ? $this->configuration->getRouteConfiguration($route) : $route;
-    return $this->renderer->renderTitle($configuration, $context);
+    return $this->renderComponent($route, 'title', $context);
+  }
+
+  public function renderComponent($route, $component, $context)
+  {
+    $configuration = is_string($route) ? $this->getRouteConfiguration($route) : $route;
+    return $this->renderer->renderComponent($configuration, $component, $context);
   }
 
   /**
@@ -117,5 +109,26 @@ class Manager implements ManagerInterface
   public function renderString($string, $context)
   {
     return $this->renderer->renderString($string, $context);
+  }
+
+
+  public function offsetExists($offset)
+  {
+    return isset($this->configuration[$offset]);
+  }
+
+  public function offsetGet($offset)
+  {
+    return $this->getRouteConfiguration($offset);
+  }
+
+  public function offsetSet($offset, $value)
+  {
+    $this->configuration[$offset] = $value;
+  }
+
+  public function offsetUnset($offset)
+  {
+    unset($this->configuration[$offset]);
   }
 }

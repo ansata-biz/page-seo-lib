@@ -19,72 +19,34 @@ class I18nRenderer implements RendererInterface
   protected $engine;
 
   /**
+   * @var string
+   */
+  protected $defaultCatalogue;
+
+  /**
    * @param \Awg\PageSeo\Render\Engine\EngineInterface $engine
    * @param \sfI18N $i18n
+   * @param string $default_catalogue
    */
-  function __construct($engine, $i18n)
+  function __construct($engine, $i18n, $default_catalogue = 'messages')
   {
     $this->engine = $engine;
     $this->i18n = $i18n;
+    $this->defaultCatalogue = $default_catalogue;
   }
 
   /**
-   * @param \Awg\PageSeo\Configuration\RouteConfiguration $configuration
+   * @param array $routeConfiguration
+   * @param $component
    * @param mixed $context
    * @return string
    */
-  public function renderText($configuration, $context)
+  public function renderComponent($routeConfiguration, $component, $context)
   {
-    $string = $configuration->getText();
-    if ($configuration instanceof \Awg\PageSeo\Configuration\I18nRouteConfiguration)
-    {
-      $string = $this->i18n->__($string, array(), $configuration->getI18nCatalogue());
-    }
-    return $this->engine->renderString($string, $context);
-  }
+    $string = $routeConfiguration[$component];
+    $catalogue = isset($routeConfiguration['i18n_catalogue']) ? $routeConfiguration['i18n_catalogue'] : $this->defaultCatalogue;
+    $string = $this->i18n->__($string, array(), $catalogue);
 
-  /**
-   * @param \Awg\PageSeo\Configuration\RouteConfiguration $configuration
-   * @param mixed $context
-   * @return string
-   */
-  public function renderTitle($configuration, $context)
-  {
-    $string = $configuration->getTitle();
-    if ($configuration instanceof \Awg\PageSeo\Configuration\I18nRouteConfiguration)
-    {
-      $string = $this->i18n->__($string, array(), $configuration->getI18nCatalogue());
-    }
-    return $this->engine->renderString($string, $context);
-  }
-
-  /**
-   * @param \Awg\PageSeo\Configuration\RouteConfiguration $configuration
-   * @param mixed $context
-   * @return string
-   */
-  public function renderDescription($configuration, $context)
-  {
-    $string = $configuration->getDescription();
-    if ($configuration instanceof \Awg\PageSeo\Configuration\I18nRouteConfiguration)
-    {
-      $string = $this->i18n->__($string, array(), $configuration->getI18nCatalogue());
-    }
-    return $this->engine->renderString($string, $context);
-  }
-
-  /**
-   * @param \Awg\PageSeo\Configuration\RouteConfiguration $configuration
-   * @param mixed $context
-   * @return string
-   */
-  public function renderKeywords($configuration, $context)
-  {
-    $string = $configuration->getKeywords();
-    if ($configuration instanceof \Awg\PageSeo\Configuration\I18nRouteConfiguration)
-    {
-      $string = $this->i18n->__($string, array(), $configuration->getI18nCatalogue());
-    }
     return $this->engine->renderString($string, $context);
   }
 
@@ -95,6 +57,7 @@ class I18nRenderer implements RendererInterface
    */
   public function renderString($string, $context)
   {
-    return $this->engine->renderString($string, $context);
+    $i18nString = $this->i18n->__($string, array(), $this->defaultCatalogue);
+    return $this->engine->renderString($i18nString, $context);
   }
 }
