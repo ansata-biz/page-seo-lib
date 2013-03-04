@@ -17,9 +17,12 @@ class PlaceholderEngine implements EngineInterface
 
   protected $prefixes;
 
-  function __construct($prefixes = array('seo', ''))
+  protected $strict;
+
+  function __construct($prefixes = array('seo', ''), $strict = true)
   {
     $this->prefixes = $prefixes;
+    $this->strict = $strict;
   }
 
 
@@ -139,7 +142,7 @@ class PlaceholderEngine implements EngineInterface
 
       foreach ($path as $part)
       {
-        $current = self::getAttribute($current, $part);
+        $current = self::getAttribute($current, $part, array(), self::ANY_CALL, !$this->strict);
       }
       $string = str_replace($match, (string)$current, $string);
     }
