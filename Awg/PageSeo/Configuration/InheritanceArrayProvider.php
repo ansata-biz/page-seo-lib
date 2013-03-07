@@ -7,6 +7,9 @@
 
 namespace Awg\PageSeo\Configuration;
 
+use Awg\PageSeo\Exception\InheritanceLoopException;
+use Awg\PageSeo\Exception\UndefinedKeyException;
+
 class InheritanceArrayProvider implements \ArrayAccess
 {
   /**
@@ -33,25 +36,50 @@ class InheritanceArrayProvider implements \ArrayAccess
    * @param string $routeName
    * @param array $stack
    *
+   * @throws \Awg\PageSeo\Exception\InheritanceLoopException
+   * @throws \Awg\PageSeo\Exception\UndefinedKeyException
    * @return array
-   * @throws \Exception
    */
   protected function getRouteConfigurationArrayInherited($routeName, $stack = array())
   {
-    $config = $this->config[$routeName];
-    if (isset($config['inherit']) && $config['inherit'][0] == '@')
+    if (!isset($this->config[$routeName]))
     {
+      // act like a regular array when trying to get undefined key
+      trigger_error(sprintf('Array key "%s" does not exist', $routeName), E_USER_WARNING);
+      return null;
+    }
+
+    $config = $this->config[$routeName];
+    // if there is inheritance
+    if ($config && isset($config['inherit']) && $config['inherit'][0] == '@')
+    {
+      // parent route name
       $inheritFrom = substr($config['inherit'], 1);
+      // if route is already in an inheritance chain
       if (isset($stack[$inheritFrom]))
       {
-        throw new \Exception(sprintf(
-          "Page Seo route configuration inheritance loop detected: (%s)",
+        throw new InheritanceLoopException(sprintf(
+          "Configuration inheritance loop detected: (%s)",
           implode(', ', array_keys($stack))
-        ));
+        ), $stack);
       }
+      // add route to inheritance chain mark
+      $stack[$routeName] = true;
+
+      if (!isset($this->config[$inheritFrom]))
+      {
+        throw new UndefinedKeyException(
+          sprintf('Trying to inherit config for %s using undefined key: %s.', $routeName, $inheritFrom),
+          $inheritFrom
+        );
+      }
+
+      // go deeper
       $parent = $this->getRouteConfigurationArrayInherited($inheritFrom, $stack);
+      // merge inherited config with own
       return array_merge($parent, $config);
     }
+    // merge default config with own
     return array_merge($this->defaults, $config);
   }
 

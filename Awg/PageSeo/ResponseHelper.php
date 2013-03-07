@@ -20,12 +20,19 @@ class ResponseHelper
   protected $response;
 
   /**
+   * @var \sfPatternRouting
+   */
+  protected $routing;
+
+  /**
    * @param Manager $manager
+   * @param \sfPatternRouting $routing
    * @param \sfWebResponse $response
    */
-  function __construct($manager, $response)
+  function __construct($manager, $routing, $response)
   {
     $this->manager = $manager;
+    $this->routing = $routing;
     $this->response = $response;
   }
 
@@ -34,8 +41,8 @@ class ResponseHelper
    */
   public function setTitle($context)
   {
-    $configuration = $this->manager->getCurrentRouteConfiguration();
-    $this->response->setTitle($this->manager->renderTitle($configuration, $context));
+    $route = $this->routing->getCurrentRouteName();
+    $this->response->setTitle($this->manager->renderTitle($route, $context));
   }
 
   /**
@@ -43,8 +50,8 @@ class ResponseHelper
    */
   public function setDescription($context)
   {
-    $configuration = $this->manager->getCurrentRouteConfiguration();
-    $this->response->addMeta('description', $this->manager->renderDescription($configuration, $context));
+    $route = $this->routing->getCurrentRouteName();
+    $this->response->addMeta('description', $this->manager->renderDescription($route, $context));
   }
 
   /**
@@ -52,8 +59,8 @@ class ResponseHelper
    */
   public function setKeywords($context)
   {
-    $configuration = $this->manager->getCurrentRouteConfiguration();
-    $this->response->addMeta('keywords', $this->manager->renderKeywords($configuration, $context));
+    $route = $this->routing->getCurrentRouteName();
+    $this->response->addMeta('keywords', $this->manager->renderKeywords($route, $context));
   }
 
   /**
@@ -61,9 +68,9 @@ class ResponseHelper
    */
   public function setMetas($context)
   {
-    $configuration = $this->manager->getCurrentRouteConfiguration();
-    $this->response->setTitle($this->manager->renderTitle($configuration, $context));
-    $this->response->addMeta('description', $this->manager->renderDescription($configuration, $context));
-    $this->response->addMeta('keywords', $this->manager->renderKeywords($configuration, $context));
+    $route = $this->routing->getCurrentRouteName();
+    $this->response->setTitle($this->manager->renderTitle($route, $context));
+    $this->response->addMeta('description', $this->manager->renderDescription($route, $context));
+    $this->response->addMeta('keywords', $this->manager->renderKeywords($route, $context));
   }
 }

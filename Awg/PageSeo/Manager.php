@@ -7,6 +7,9 @@
 
 namespace Awg\PageSeo;
 
+use Awg\PageSeo\Exception\UndefinedKeyException;
+use Awg\PageSeo\Exception\UndefinedPlaceholderException;
+
 class Manager implements ManagerInterface
 {
   /**
@@ -20,43 +23,32 @@ class Manager implements ManagerInterface
   protected $renderer;
 
   /**
-   * @var \sfPatternRouting
-   */
-  protected $routing;
-
-  /**
    * @param array $configuration
-   * @param \sfPatternRouting $routing
    * @param \Awg\PageSeo\Render\RendererInterface $renderer
    */
-  public function __construct($configuration, $routing, $renderer)
+  public function __construct($configuration, $renderer)
   {
     // $this->i18n = sfContext::getInstance()->getI18N();
     $this->configuration = $configuration;
-    $this->routing = $routing;
     $this->renderer = $renderer;
   }
 
   /**
    * @param string $routeName
+   * @throws Exception\UndefinedKeyException
    * @return array
    */
   public function getRouteConfiguration($routeName)
   {
+    if (!isset($this->configuration[$routeName]))
+    {
+      throw new UndefinedKeyException(sprintf('There is no SEO configuration defined for route "%s"', $routeName));
+    }
     return $this->configuration[$routeName];
   }
 
   /**
-   * @return array
-   */
-  public function getCurrentRouteConfiguration()
-  {
-    $route = $this->routing->getCurrentRouteName();
-    return $this->getRouteConfiguration($route);
-  }
-
-  /**
-   * @param array|string $route
+   * @param string $route
    * @param mixed $context
    * @return string
    */
@@ -66,7 +58,7 @@ class Manager implements ManagerInterface
   }
 
   /**
-   * @param array|string $route
+   * @param string $route
    * @param mixed $context
    * @return string
    */
@@ -95,10 +87,38 @@ class Manager implements ManagerInterface
     return $this->renderComponent($route, 'title', $context);
   }
 
+  /**
+   * @param string $route route name
+   * @param string $component
+   * @param mixed $context
+   * @return string
+   *
+   * @throws Exception\UndefinedPlaceholderException
+   */
   public function renderComponent($route, $component, $context)
   {
-    $configuration = is_string($route) ? $this->getRouteConfiguration($route) : $route;
-    return $this->renderer->renderComponent($configuration, $component, $context);
+    try
+    {
+      $configuration = $this->getRouteConfiguration($route);
+      return $this->renderer->renderComponent($configuration, $component, $context);
+    }
+    catch (UndefinedPlaceholderException $e)
+    {
+      if (is_string($route)) // in this case we can provide additional useful debug info
+      {
+        throw new UndefinedPlaceholderException(
+          /* message */ sprintf(
+            'Error rendering "%s" component for route "%s": %s',
+            $component, $route, $e->getMessage()
+          ),
+          /* placeholder */ $e->getPlaceholder(),
+          /* previous exception */ $e);
+      }
+      else
+      {
+        throw $e;
+      }
+    }
   }
 
   /**
@@ -110,7 +130,6 @@ class Manager implements ManagerInterface
   {
     return $this->renderer->renderString($string, $context);
   }
-
 
   public function offsetExists($offset)
   {

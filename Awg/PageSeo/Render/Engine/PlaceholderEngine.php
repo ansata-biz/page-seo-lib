@@ -7,6 +7,8 @@
 
 namespace Awg\PageSeo\Render\Engine;
 
+use Awg\PageSeo\Exception\UndefinedPlaceholderException;
+
 class PlaceholderEngine implements EngineInterface
 {
   protected static $cache = array();
@@ -35,9 +37,9 @@ class PlaceholderEngine implements EngineInterface
    * @param string  $type              The type of attribute (@see rcStringUtils::ANY_CALL and others)
    * @param Boolean $ignoreStrictCheck Whether to ignore the strict attribute check or not
    *
+   * @throws \Awg\PageSeo\Exception\UndefinedPlaceholderException
    * @return mixed The attribute value, or a Boolean when $isDefinedTest is true, or null when the attribute is not set and $ignoreStrictCheck is true
    *
-   * @throws \Exception if the attribute does not exist and Twig is running in strict mode and $isDefinedTest is false
    */
   protected function getAttribute($object, $item, array $arguments = array(), $type = self::ANY_CALL, $ignoreStrictCheck = false)
   {
@@ -58,11 +60,11 @@ class PlaceholderEngine implements EngineInterface
         }
 
         if (is_object($object)) {
-          throw new \Exception(sprintf('Key "%s" in object (with ArrayAccess) of type "%s" does not exist', $item, get_class($object)));
+          throw new UndefinedPlaceholderException(sprintf('Key "%s" in object (with ArrayAccess) of type "%s" does not exist', $item, get_class($object)), $item);
         } elseif (is_array($object)) {
-          throw new \Exception(sprintf('Key "%s" for array with keys "%s" does not exist', $item, implode(', ', array_keys($object))));
+          throw new UndefinedPlaceholderException(sprintf('Key "%s" for array with keys "%s" does not exist', $item, implode(', ', array_keys($object))), $item);
         } else {
-          throw new \Exception(sprintf('Impossible to access a key ("%s") on a "%s" variable', $item, gettype($object)));
+          throw new UndefinedPlaceholderException(sprintf('Impossible to access a key ("%s") on a "%s" variable', $item, gettype($object)), $item);
         }
       }
     }
@@ -72,7 +74,7 @@ class PlaceholderEngine implements EngineInterface
         return null;
       }
 
-      throw new \Exception(sprintf('Item "%s" for "%s" does not exist', $item, is_array($object) ? 'Array' : $object));
+      throw new UndefinedPlaceholderException(sprintf('Item "%s" for "%s" does not exist', $item, is_array($object) ? 'Array' : $object));
     }
 
     $class = get_class($object);
@@ -116,7 +118,7 @@ class PlaceholderEngine implements EngineInterface
         if ($ignoreStrictCheck) {
           return null;
         }
-        throw new \Exception(sprintf('Method "%s" for object "%s" does not exist', $item, get_class($object)));
+        throw new UndefinedPlaceholderException(sprintf('Method "%s" for object "%s" does not exist', $item, get_class($object)), $item);
       }
     }
 
@@ -140,11 +142,18 @@ class PlaceholderEngine implements EngineInterface
       $path = explode('.', $field);
       $current = $context;
 
-      foreach ($path as $part)
+      try
       {
-        $current = self::getAttribute($current, $part, array(), self::ANY_CALL, !$this->strict);
+        foreach ($path as $part)
+        {
+          $current = self::getAttribute($current, $part, array(), self::ANY_CALL, !$this->strict);
+        }
+        $string = str_replace($match, (string)$current, $string);
       }
-      $string = str_replace($match, (string)$current, $string);
+      catch (UndefinedPlaceholderException $e)
+      {
+        throw new UndefinedPlaceholderException(sprintf('Error rendering "%s": %s', $field, $e->getMessage()), $field, $e);
+      }
     }
 
     return $string;
