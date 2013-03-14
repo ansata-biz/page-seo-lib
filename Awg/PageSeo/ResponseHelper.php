@@ -33,10 +33,7 @@ class ResponseHelper
 
   /**
    * @param Manager $manager
-   * @para* routing configuration
-* static pages content stub in .html files
-* breadcrumbs configuraiton + controller
-* refactored awgPageSeoPlugin: added ConfigurationHelper, modified manager interfacem \sfWebResponse $response
+   * @param \sfWebResponse $response
    * @param $helper
    */
   function __construct($manager, $response, $helper)
