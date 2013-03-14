@@ -11,10 +11,10 @@ use \Awg\PageSeo\Render\Engine\EngineInterface;
 interface RendererInterface extends EngineInterface
 {
   /**
-   * @param array $routeConfiguration
+   * @param string $key
    * @param $component
    * @param mixed $context
    * @return string
    */
-  public function renderComponent($routeConfiguration, $component, $context);
+  public function renderComponent($key, $component, $context);
 }

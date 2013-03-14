@@ -34,82 +34,83 @@ class Manager implements ManagerInterface
   }
 
   /**
-   * @param string $routeName
+   * @param string $key
    * @throws Exception\UndefinedKeyException
    * @return array
    */
-  public function getRouteConfiguration($routeName)
+  public function getConfiguration($key)
   {
-    if (!isset($this->configuration[$routeName]))
+    if (!isset($this->configuration[$key]))
     {
-      throw new UndefinedKeyException(sprintf('There is no SEO configuration defined for route "%s"', $routeName));
+      throw new UndefinedKeyException(sprintf('There is no SEO configuration defined for route "%s"', $key));
     }
-    return $this->configuration[$routeName];
+    return $this->configuration[$key];
   }
 
   /**
-   * @param string $route
+   * @param string $key
    * @param mixed $context
    * @return string
    */
-  public function renderDescription($route, $context)
+  public function renderDescription($key, $context)
   {
-    return $this->renderComponent($route, 'description', $context);
+    return $this->renderComponent($key, 'description', $context);
   }
 
   /**
-   * @param string $route
+   * @param string $key
    * @param mixed $context
    * @return string
    */
-  public function renderKeywords($route, $context)
+  public function renderKeywords($key, $context)
   {
-    return $this->renderComponent($route, 'keywords', $context);
+    return $this->renderComponent($key, 'keywords', $context);
   }
 
   /**
-   * @param array|string $route
+   * @param array|string $key
    * @param mixed $context
    * @return string
    */
-  public function renderText($route, $context)
+  public function renderText($key, $context)
   {
-    return $this->renderComponent($route, 'text', $context);
+    return $this->renderComponent($key, 'text', $context);
   }
 
   /**
-   * @param array|string $route
+   * @param array|string $key
    * @param mixed $context
    * @return string
    */
-  public function renderTitle($route, $context)
+  public function renderTitle($key, $context)
   {
-    return $this->renderComponent($route, 'title', $context);
+    return $this->renderComponent($key, 'title', $context);
   }
 
   /**
-   * @param string $route route name
+   * @param string $key route name
    * @param string $component
    * @param mixed $context
-   * @return string
    *
    * @throws Exception\UndefinedPlaceholderException
+   *
+   * @return string
    */
-  public function renderComponent($route, $component, $context)
+  public function renderComponent($key, $component, $context)
   {
     try
     {
-      $configuration = $this->getRouteConfiguration($route);
+      $configuration = $this->getConfiguration($key);
       return $this->renderer->renderComponent($configuration, $component, $context);
     }
     catch (UndefinedPlaceholderException $e)
     {
-      if (is_string($route)) // in this case we can provide additional useful debug info
+      if (is_string($key)) // in this case we can provide additional useful debug info
       {
         throw new UndefinedPlaceholderException(
           /* message */ sprintf(
             'Error rendering "%s" component for route "%s": %s',
-            $component, $route, $e->getMessage()
+            $component, $key, $e->getMessage()
           ),
           /* placeholder */ $e->getPlaceholder(),
           /* previous exception */ $e);
@@ -138,7 +139,7 @@ class Manager implements ManagerInterface
 
   public function offsetGet($offset)
   {
-    return $this->getRouteConfiguration($offset);
+    return $this->getConfiguration($offset);
   }
 
   public function offsetSet($offset, $value)

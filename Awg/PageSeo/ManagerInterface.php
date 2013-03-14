@@ -15,7 +15,7 @@ interface ManagerInterface extends \ArrayAccess, RendererInterface
    * @param string $routeName
    * @return array
    */
-  public function getRouteConfiguration($routeName);
+  public function getConfiguration($routeName);
 
   /**
    * @param string $route

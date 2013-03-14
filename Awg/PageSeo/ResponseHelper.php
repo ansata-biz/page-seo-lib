@@ -7,6 +7,13 @@
 
 namespace Awg\PageSeo;
 
+use Awg\PageSeo\Exception\UndefinedKeyException;
+
+/**
+ * Class ResponseHelper helps to set response metas for a given page based on current context
+ *
+ * @package Awg\PageSeo
+ */
 class ResponseHelper
 {
   /**
@@ -20,29 +27,32 @@ class ResponseHelper
   protected $response;
 
   /**
-   * @var \sfPatternRouting
+   * @var ConfigurationHelper
    */
-  protected $routing;
+  protected $helper;
 
   /**
    * @param Manager $manager
-   * @param \sfPatternRouting $routing
-   * @param \sfWebResponse $response
+   * @para* routing configuration
+* static pages content stub in .html files
+* breadcrumbs configuraiton + controller
+* refactored awgPageSeoPlugin: added ConfigurationHelper, modified manager interfacem \sfWebResponse $response
+   * @param $helper
    */
-  function __construct($manager, $routing, $response)
+  function __construct($manager, $response, $helper)
   {
     $this->manager = $manager;
-    $this->routing = $routing;
     $this->response = $response;
+    $this->helper = $helper;
   }
 
   /**
-   * @param mixed $context
+   * @param mixed $context$this->request->getUri()
    */
   public function setTitle($context)
   {
-    $route = $this->routing->getCurrentRouteName();
-    $this->response->setTitle($this->manager->renderTitle($route, $context));
+    $key = $this->helper->detectCurrentValidFallbackKey();
+    $this->response->setTitle($this->manager->renderTitle($key, $context));
   }
 
   /**
@@ -50,8 +60,8 @@ class ResponseHelper
    */
   public function setDescription($context)
   {
-    $route = $this->routing->getCurrentRouteName();
-    $this->response->addMeta('description', $this->manager->renderDescription($route, $context));
+    $key = $this->helper->detectCurrentValidFallbackKey();
+    $this->response->addMeta('description', $this->manager->renderDescription($key, $context));
   }
 
   /**
@@ -59,18 +69,19 @@ class ResponseHelper
    */
   public function setKeywords($context)
   {
-    $route = $this->routing->getCurrentRouteName();
-    $this->response->addMeta('keywords', $this->manager->renderKeywords($route, $context));
+    $key = $this->helper->detectCurrentValidFallbackKey();
+    $this->response->addMeta('keywords', $this->manager->renderKeywords($key, $context));
   }
 
   /**
    * @param mixed $context
+   * @throws Exception\UndefinedKeyException
    */
   public function setMetas($context)
   {
-    $route = $this->routing->getCurrentRouteName();
-    $this->response->setTitle($this->manager->renderTitle($route, $context));
-    $this->response->addMeta('description', $this->manager->renderDescription($route, $context));
-    $this->response->addMeta('keywords', $this->manager->renderKeywords($route, $context));
+    $key = $this->helper->detectCurrentValidFallbackKey();
+    $this->response->setTitle($this->manager->renderTitle($key, $context));
+    $this->response->addMeta('description', $this->manager->renderDescription($key, $context));
+    $this->response->addMeta('keywords', $this->manager->renderKeywords($key, $context));
   }
 }

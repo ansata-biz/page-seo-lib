@@ -7,6 +7,11 @@
 
 namespace Awg\PageSeo;
 
+/**
+ * Class LinkHelper generates links with all seo-friendly attributes set basing on configuration for given route
+ *
+ * @package Awg\PageSeo
+ */
 class LinkHelper
 {
   /**
