@@ -77,8 +77,19 @@ class ResponseHelper
   public function setMetas($context)
   {
     $key = $this->helper->detectCurrentValidFallbackKey();
-    $this->response->setTitle($this->manager->renderTitle($key, $context));
-    $this->response->addMeta('description', $this->manager->renderDescription($key, $context));
-    $this->response->addMeta('keywords', $this->manager->renderKeywords($key, $context));
+
+    if ($title = $this->manager->renderTitle($key, $context))
+    {
+      $this->response->setTitle($title);
+    }
+    if ($keywords = $this->manager->renderKeywords($key, $context))
+    {
+      $this->response->addMeta('keywords', $keywords);
+    }
+    if ($description = $this->manager->renderDescription($key, $context))
+    {
+      $this->response->addMeta('description', $description);
+    }
+
   }
 }
