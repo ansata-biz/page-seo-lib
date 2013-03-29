@@ -47,8 +47,8 @@ class I18nRenderer implements RendererInterface
     $catalogue = isset($routeConfiguration['i18n_catalogue']) ? $routeConfiguration['i18n_catalogue'] : $this->defaultCatalogue;
     $string = $this->i18n->__($string, array(), $catalogue);
 
-    $finally = function() use ($string, $context) {
-      return $this->engine->renderString($string, $context);
+    $finally = function($engine) use ($string, $context) {
+      return $engine->renderString($string, $context);
     };
 
     try
@@ -60,9 +60,9 @@ class I18nRenderer implements RendererInterface
     }
     catch (\Exception $e)
     {
-      return $finally();
+      return $finally($this->engine);
     }
-    return $finally();
+    return $finally($this->engine);
   }
 
   /**
