@@ -47,7 +47,22 @@ class I18nRenderer implements RendererInterface
     $catalogue = isset($routeConfiguration['i18n_catalogue']) ? $routeConfiguration['i18n_catalogue'] : $this->defaultCatalogue;
     $string = $this->i18n->__($string, array(), $catalogue);
 
-    return $this->engine->renderString($string, $context);
+    $finally = function() use ($string, $context) {
+      return $this->engine->renderString($string, $context);
+    };
+
+    try
+    {
+      if ($result = $this->engine->renderString("%html_" . $component . "%", $context))
+      {
+        return $result;
+      }
+    }
+    catch (\Exception $e)
+    {
+      return $finally();
+    }
+    return $finally();
   }
 
   /**
