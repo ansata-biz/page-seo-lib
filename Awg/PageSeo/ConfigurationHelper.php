@@ -55,7 +55,7 @@ class ConfigurationHelper
   {
     $uri = str_pad(ltrim($this->request->getPathInfo(), '/'), 1, '/', STR_PAD_LEFT);
     // fallback
-    $keys = array($uri, $this->routing->getCurrentRouteName());
+    $keys = array($uri, ltrim($this->routing->getCurrentInternalUri($with_route_name = true),'@'));
     return $this->getValidFallbackKey($keys);
   }
 
