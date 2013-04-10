@@ -108,6 +108,10 @@ class PlaceholderEngine implements EngineInterface
           $method = 'is'.$item;
         }
       }
+
+      if (isset($method)) {
+        break;
+      }
     }
 
     if (!isset($method))
