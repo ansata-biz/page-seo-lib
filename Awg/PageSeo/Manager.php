@@ -92,8 +92,7 @@ class Manager implements ManagerInterface
    * @param string $component
    * @param mixed $context
    *
-   * @throws Exception\UndefinedPlaceholderException
-   *
+   * @throws Exception\UndefinedPlaceholderException|\Exception
    * @return string
    */
   public function renderComponent($key, $component, $context)

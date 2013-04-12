@@ -20,18 +20,11 @@ class LinkHelper
   protected $manager;
 
   /**
-   * @var \sfPatternRouting
-   */
-  // protected $routing;
-
-  /**
    * @param ManagerInterface $manager
-   * @internal @param \sfPatternRouting $routing
    */
   public function __construct($manager)
   {
     $this->manager = $manager;
-    // $this->routing = $routing;
   }
 
   /**
@@ -58,6 +51,7 @@ class LinkHelper
   public function generateLink($text, $context, $route, $parameters = array(), $attributes = array())
   {
     $context = $context ?: $parameters;
+    $key = (count($parameters) == 0) ? $route : ($route . '?' . http_build_query($parameters));
 
     if ($text)
     {
@@ -65,7 +59,7 @@ class LinkHelper
     }
     else
     {
-      $text = $this->manager->renderText($route, $context);
+      $text = $this->manager->renderText($key, $context);
     }
 
     if (isset($attributes['title']))
@@ -74,7 +68,7 @@ class LinkHelper
     }
     else
     {
-      $attributes['title'] = $this->manager->renderTitle($route, $context);
+      $attributes['title'] = $this->manager->renderTitle($key, $context);
     }
 
     return link_to($text, $route, $parameters, $attributes);
