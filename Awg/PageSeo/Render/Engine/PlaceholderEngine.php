@@ -134,6 +134,7 @@ class PlaceholderEngine implements EngineInterface
   /**
    * @param string $string
    * @param mixed $context
+   * @throws \Awg\PageSeo\Exception\UndefinedPlaceholderException
    * @return mixed|string
    */
   public function renderString($string, $context)

@@ -6,8 +6,6 @@
  */
 namespace Awg\PageSeo\Render;
 
-use Awg\PageSeo\Exception\UndefinedKeyException;
-
 class I18nRenderer implements RendererInterface
 {
   /**
@@ -47,7 +45,7 @@ class I18nRenderer implements RendererInterface
   {
     if (!isset($routeConfiguration[$component]))
     {
-      throw new UndefinedKeyException(sprintf('There is no "%s" component in route configuration (%s).', $component, json_encode($routeConfiguration)));
+      return null;
     }
     $string = $routeConfiguration[$component];
     $catalogue = isset($routeConfiguration['i18n_catalogue']) ? $routeConfiguration['i18n_catalogue'] : $this->defaultCatalogue;
