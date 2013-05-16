@@ -15,6 +15,9 @@ class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
   /** @var array */
   protected $configuration;
 
+  /** @var  array */
+  protected $indexedConfiguration;
+
   /** @var array|string[] */
   protected $cache = array();
 
@@ -23,7 +26,23 @@ class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
    */
   function __construct($configuration)
   {
+    $out = array();
+    foreach ($configuration as $key => $config)
+    {
+      $key = explode('?', $key, 2);
+      $pattern = array_key_exists(1, $key) ? $key[1] : "*";
+      $key = $key[0];
+
+      if (!array_key_exists($key, $out))
+      {
+        $out[$key] = array();
+      }
+
+      $out[$key][$pattern] = $config;
+    }
+
     $this->configuration = $configuration;
+    $this->indexedConfiguration = $out;
   }
 
   public function offsetExists($offset)
@@ -59,13 +78,32 @@ class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
    */
   private function match($offset)
   {
-    if (!isset($this->cache[$offset]))
+    $request = explode("?", $offset, 2);
+
+    if (array_key_exists($offset, $this->cache))
     {
-      // find a key with highest matching mark
+      return $this->cache[$offset];
+    }
+
+    if (!array_key_exists($request[0], $this->indexedConfiguration))
+    {
+      $this->cache[$offset] = false;
+    }
+    else
+    {
       $best = null;
-      foreach ($this->configuration as $key => $value)
+      foreach ($this->indexedConfiguration[$request[0]] as $pattern => $config)
       {
-        $mark = $this->matchKey($offset, $key);
+        $key = $request[0] . (($pattern == "*") ? '' : '?' . $pattern);
+        if ($pattern == "*")
+        {
+          $mark = .5;
+        }
+        else
+        {
+          $mark = $this->matchKey($offset, $request[0], $pattern !== "*" ? $pattern : '');
+        }
+
         if ($mark > $best)
         {
           $this->cache[$offset] = $key;
@@ -77,27 +115,23 @@ class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
         $this->cache[$offset] = false;
       }
     }
+
     return $this->cache[$offset];
   }
 
   /**
    * @param string $uri Current uri
+   * @param string $key Configuration index key
    * @param string $pattern Pattern defined in config
    * @return int matching mark
    */
-  private function matchKey($uri, $pattern)
+  private function matchKey($uri, $key, $pattern)
   {
-    // exact match
-    if ($uri == $pattern)
-    {
-      return 100; // the perfect pair
-    }
-
     $uriComponents = explode('?', $uri, 2);
-    $patternComponents = explode('?', $pattern, 2);
+    $patternComponents = array($key, $pattern);
 
     // route name does not match
-    if ($uriComponents[0] != $patternComponents[0])
+    if ($uriComponents[0] != $key)
     {
       return false;
     }
@@ -106,7 +140,7 @@ class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
     if (count($patternComponents) == 1)
     {
       // match route names => 1 point for route name
-      return ($uriComponents[0] == $patternComponents[0]) ? 1 : false;
+      return ($uriComponents[0] == $key) ? 1 : false;
     }
 
     // pattern requires vars but uri does not have ones

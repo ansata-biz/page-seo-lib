@@ -10,29 +10,27 @@ namespace Awg\PageSeo\Configuration;
 use Awg\PageSeo\Exception\InheritanceLoopException;
 use Awg\PageSeo\Exception\UndefinedKeyException;
 
-class InheritanceArrayProvider implements \ArrayAccess, \Iterator
+class InheritanceArrayProvider extends \ArrayObject
 {
-  /**
-   * @var array
-   */
-  protected $config;
-
-  /**
-   * @var array
-   */
-  protected $defaults;
-
   /**
    * @param array $config
    * @param array $defaults
    */
   function __construct($config, $defaults = array())
   {
-    $this->config = $config;
-    $this->defaults = $defaults ? : array();
+    $processed = array();
+    $defaults = (array) $defaults;
+    foreach ($config as $key => $value)
+    {
+      $processed[$key] = $this->getRouteConfigurationArrayInherited($config, $defaults, $key);
+    }
+
+    parent::__construct($processed);
   }
 
   /**
+   * @param $configuration
+   * @param array $defaults
    * @param string $routeName
    * @param array $stack
    *
@@ -40,16 +38,16 @@ class InheritanceArrayProvider implements \ArrayAccess, \Iterator
    * @throws \Awg\PageSeo\Exception\UndefinedKeyException
    * @return array
    */
-  protected function getRouteConfigurationArrayInherited($routeName, $stack = array())
+  private function getRouteConfigurationArrayInherited(&$configuration, &$defaults, $routeName, $stack = array())
   {
-    if (!isset($this->config[$routeName]))
+    if (!isset($configuration[$routeName]))
     {
       // act like a regular array when trying to get undefined key
       trigger_error(sprintf('Array key "%s" does not exist', $routeName), E_USER_WARNING);
       return null;
     }
 
-    $config = $this->config[$routeName];
+    $config = $configuration[$routeName];
     // if there is inheritance
     if ($config && isset($config['inherit']) && $config['inherit'][0] == '@')
     {
@@ -66,7 +64,7 @@ class InheritanceArrayProvider implements \ArrayAccess, \Iterator
       // add route to inheritance chain mark
       $stack[$routeName] = true;
 
-      if (!isset($this->config[$inheritFrom]))
+      if (!isset($configuration[$inheritFrom]))
       {
         throw new UndefinedKeyException(
           sprintf('Trying to inherit config for %s using undefined key: %s.', $routeName, $inheritFrom),
@@ -75,56 +73,11 @@ class InheritanceArrayProvider implements \ArrayAccess, \Iterator
       }
 
       // go deeper
-      $parent = $this->getRouteConfigurationArrayInherited($inheritFrom, $stack);
+      $parent = $this->getRouteConfigurationArrayInherited($configuration, $defaults, $inheritFrom, $stack);
       // merge inherited config with own
       return array_merge($parent, $config);
     }
     // merge default config with own
-    return array_merge($this->defaults, $config);
-  }
-
-  public function offsetExists($offset)
-  {
-    return isset($this->config[$offset]);
-  }
-
-  public function offsetGet($offset)
-  {
-    return $this->getRouteConfigurationArrayInherited($offset);
-  }
-
-  public function offsetSet($offset, $value)
-  {
-    $this->config[$offset] = $value;
-  }
-
-  public function offsetUnset($offset)
-  {
-    unset($this->config[$offset]);
-  }
-
-  public function current()
-  {
-    return $this[$this->key()];
-  }
-
-  public function next()
-  {
-    return next($this->config);
-  }
-
-  public function key()
-  {
-    return key($this->config);
-  }
-
-  public function valid()
-  {
-    return isset($this->config[$this->key()]);
-  }
-
-  public function rewind()
-  {
-    reset($this->config);
+    return array_merge($defaults, $config);
   }
 }
