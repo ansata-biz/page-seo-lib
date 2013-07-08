@@ -95,10 +95,9 @@ class PlaceholderEngine implements EngineInterface
     foreach ($this->prefixes as $prefix)
     {
       $lcItem = strtolower($prefix.$item);
-      $ccItem = \sfInflector::camelize($item); // camel cased
-      $lcCcItem = strtolower($prefix.$ccItem); // lower case camel cased (removed _ and -)
+      $lcCcItem = strtolower($prefix.preg_replace('|[-_]|', '', $item)); // lower case camel cased (removed _ and -)
 
-      foreach (array($lcItem => $prefix.$item, $lcCcItem => $prefix.$ccItem) as $key => $name)
+      foreach (array($lcItem => $prefix.$item, $lcCcItem => $lcCcItem) as $key => $name)
       {
         if (isset(self::$cache[$class]['methods'][$key])) {
           $method = $name;
