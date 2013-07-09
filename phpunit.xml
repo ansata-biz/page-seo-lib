@@ -1,0 +1,8 @@
+<phpunit bootstrap="test/bootstrap.php">
+  <testsuite name="page-seo-lib Test Suite">
+    <directory>test</directory>
+  </testsuite>
+  <logging>
+    <log type="coverage-text" target="php://stdout" showUncoveredFiles="false"/>
+  </logging>
+</phpunit>
