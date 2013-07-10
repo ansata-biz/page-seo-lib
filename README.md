@@ -3,7 +3,7 @@ Page Seo library
 
 Library to simplify managing and retrieving seo strings configurations from a config array
 
-"!https://travis-ci.org/ansata-biz/page-seo-lib.png!":https://travis-ci.org/ansata-biz/page-seo-lib
+[![Build Status](https://travis-ci.org/ansata-biz/page-seo-lib.png)](https://travis-ci.org/ansata-biz/page-seo-lib)
 
 
 Installation
