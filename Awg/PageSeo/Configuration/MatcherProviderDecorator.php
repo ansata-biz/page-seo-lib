@@ -7,9 +7,6 @@
 
 namespace Awg\PageSeo\Configuration;
 
-
-use Traversable;
-
 class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
 {
   /** @var array */
@@ -26,23 +23,21 @@ class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
    */
   function __construct($configuration)
   {
-    $out = array();
-    foreach ($configuration as $key => $config)
+    $index = array();
+    foreach ($configuration as $pattern => $config)
     {
-      $key = explode('?', $key, 2);
-      $pattern = array_key_exists(1, $key) ? $key[1] : "*";
-      $key = $key[0];
+      $parts = explode('?', $pattern, 2);
 
-      if (!array_key_exists($key, $out))
-      {
-        $out[$key] = array();
-      }
+      $route = $parts[0];
+      $paramStr = isset($parts[1]) ? $parts[1] : "*";
 
-      $out[$key][$pattern] = $config;
+      $index[$route][$paramStr] = $config;
+      // preset cache results for exact configuration matches
+      $this->cache[$pattern] = $pattern;
     }
 
     $this->configuration = $configuration;
-    $this->indexedConfiguration = $out;
+    $this->indexedConfiguration = $index;
   }
 
   public function offsetExists($offset)
@@ -73,98 +68,97 @@ class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
   }
 
   /**
-   * @param $offset
+   * Returns best matching configuration key for a request string
+   *
+   * @param $pattern
    * @return string
    */
-  private function match($offset)
+  private function match($pattern)
   {
-    $request = explode("?", $offset, 2);
+    $parts = explode('?', $pattern, 2);
+    $reqParamStr = isset($parts[1]) ? $parts[1] : '';
 
-    if (array_key_exists($offset, $this->cache))
+    if (array_key_exists($pattern, $this->cache))
     {
-      return $this->cache[$offset];
+      return $this->cache[$pattern];
     }
 
-    if (!array_key_exists($request[0], $this->indexedConfiguration))
+    if (!array_key_exists($parts[0], $this->indexedConfiguration))
     {
-      $this->cache[$offset] = false;
+      $this->cache[$pattern] = false;
     }
     else
     {
       $best = null;
-      foreach ($this->indexedConfiguration[$request[0]] as $pattern => $config)
+      foreach ($this->indexedConfiguration[$parts[0]] as $configParamStr => $config)
       {
-        $key = $request[0] . (($pattern == "*") ? '' : '?' . $pattern);
-        if ($pattern == "*")
+        $key = $parts[0] . (($configParamStr == "*") ? '' : '?' . $configParamStr);
+        if ($configParamStr == "*")
         {
           $mark = .5;
         }
         else
         {
-          $mark = $this->matchKey($offset, $request[0], $pattern !== "*" ? $pattern : '');
+          $mark = $this->matchKey($reqParamStr, $configParamStr);
         }
 
-        if ($mark > $best)
+        if ($mark > 0 && $mark > $best)
         {
-          $this->cache[$offset] = $key;
+          $this->cache[$pattern] = $key;
           $best = $mark;
         }
       }
       if ($best === null)
       {
-        $this->cache[$offset] = false;
+        $this->cache[$pattern] = false;
       }
     }
 
-    return $this->cache[$offset];
+    return $this->cache[$pattern];
   }
 
   /**
-   * @param string $uri Current uri
-   * @param string $key Configuration index key
-   * @param string $pattern Pattern defined in config
+   * @param string $requestParamStr requested query params string
+   * @param string $configParamStr query params string from configuration
    * @return int matching mark
    */
-  private function matchKey($uri, $key, $pattern)
+  private function matchKey($requestParamStr, $configParamStr)
   {
-    $uriComponents = explode('?', $uri, 2);
-    $patternComponents = array($key, $pattern);
-
-    // route name does not match
-    if ($uriComponents[0] != $key)
+    // no request params and 1+ config requirements
+    if (!$requestParamStr && $configParamStr)
     {
-      return false;
+      return 0;
+    }
+    // exact string matching
+    if ($requestParamStr == $configParamStr)
+    {
+      return strlen($requestParamStr) > 0 ? substr_count($requestParamStr, '&') + 1 : 0; // = number of vars in str
     }
 
-    // no vars in pattern
-    if (count($patternComponents) == 1)
+    /** @var $reqParams array|string[] */
+    parse_str($requestParamStr, $reqParams);
+    /** @var $configParams array|string[] */
+    parse_str($configParamStr, $configParams);
+
+    // pattern requires vars but request does not have ones
+    if (count($reqParams) < count($configParams))
     {
-      // match route names => 1 point for route name
-      return ($uriComponents[0] == $key) ? 1 : false;
+      return 0;
     }
 
-    // pattern requires vars but uri does not have ones
-    if (count($uriComponents) == 1 && count($patternComponents) == 2)
-    {
-      return false;
-    }
+    $mark = 0;
 
-    // patterns matched - so match vars
-    $mark = 1; // 1 point for matching route name
-    parse_str($uriComponents[1], $uriVars);
-    parse_str($patternComponents[1], $patternVars);
-
-    foreach ($patternVars as $var => $value)
+    foreach ($configParams as $var => $value)
     {
-      if (!array_key_exists($var, $uriVars))
+      if (!array_key_exists($var, $reqParams))
       {
         // var no found in $uri
-        return false;
+        return 0;
       }
-      if ($value != $uriVars[$var])
+      if ($value != $reqParams[$var])
       {
         // var not matched
-        return false;
+        return 0;
       }
       $mark++;
     }

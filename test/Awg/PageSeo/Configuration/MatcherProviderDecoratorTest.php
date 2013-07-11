@@ -27,11 +27,14 @@ class MatcherProviderDecoratorTest extends \PHPUnit_Framework_TestCase
       ),
       'country?code=us' => array(
         'title' => 'United States'
+      ),
+      'country?code=fr&culture=fr' => array(
+        'title' => 'France'
       )
     );
     $config = new MatcherProviderDecorator($arr);
 
-    $this->assertEquals(array_keys(iterator_to_array($config)), array('faq', 'forum', 'page', 'page?path=about', 'country?code=us'), 'Class implements iterator interface');
+    $this->assertEquals(array_keys(iterator_to_array($config)), array_keys($arr), 'Class implements iterator interface');
 
     // Direct matching
     $this->assertEquals($config['faq']['title'], 'FAQ', 'faq');
@@ -49,6 +52,10 @@ class MatcherProviderDecoratorTest extends \PHPUnit_Framework_TestCase
     // cannot fallback
     // Query string matching - cannot use fallback
     $this->assertTrue(!isset($config['country']), 'country');
+    $this->assertTrue(!isset($config['coutry']), 'misspelled');
     $this->assertTrue(!isset($config['country?code=ru']), 'country?code=ru');
+    $this->assertTrue(!isset($config['country?tail=something']), 'country?tail=something');
+    $this->assertTrue(!isset($config['country?code=fr']), 'country?code=fr');
+    $this->assertEquals($config['country?code=fr&culture=fr']['title'], 'France', 'query string exact match');
   }
 }
