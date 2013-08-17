@@ -7,6 +7,8 @@
 
 namespace Awg\PageSeo\Configuration;
 
+use Awg\PageSeo\Cache\CacheStorageInterface;
+
 class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
 {
   /** @var array */
@@ -15,29 +17,81 @@ class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
   /** @var  array */
   protected $indexedConfiguration;
 
+  /** @var array */
+  protected $vars;
+
   /** @var array|string[] */
   protected $cache = array();
 
+  /** @var CacheStorageInterface */
+  protected $cacheStorage;
+
   /**
    * @param array $configuration
+   * @param CacheStorageInterface $cache
    */
-  function __construct($configuration)
+  function __construct($configuration, $cache = null)
   {
-    $index = array();
-    foreach ($configuration as $pattern => $config)
+    $this->cacheStorage = $cache;
+    $this->configuration = $configuration;
+
+    foreach ($this->configuration as $pattern => $config)
     {
-      $parts = explode('?', $pattern, 2);
-
-      $route = $parts[0];
-      $paramStr = isset($parts[1]) ? $parts[1] : "*";
-
-      $index[$route][$paramStr] = $config;
-      // preset cache results for exact configuration matches
       $this->cache[$pattern] = $pattern;
     }
 
-    $this->configuration = $configuration;
-    $this->indexedConfiguration = $index;
+    if ($this->cacheStorage && $index = $this->cacheStorage->get('page_seo_indexed_configuration'))
+    {
+      $this->indexedConfiguration = $index;
+    }
+    else
+    {
+      $index = array();
+      foreach ($configuration as $pattern => $config)
+      {
+        $parts = explode('?', $pattern, 2);
+
+        $route = $parts[0];
+        $paramStr = isset($parts[1]) ? $parts[1] : "*";
+
+        $index[$route][$paramStr] = $config;
+        // preset cache results for exact configuration matches
+      }
+      $this->indexedConfiguration = $index;
+      if ($this->cacheStorage)
+      {
+        $this->cacheStorage->set('page_seo_indexed_configuration', $this->indexedConfiguration);
+      }
+    }
+
+    if ($this->cacheStorage && $vars = $this->cacheStorage->get('page_seo_configuration_vars'))
+    {
+      $this->vars = $vars;
+    }
+    else
+    {
+      $vars = array();
+      foreach ($this->indexedConfiguration as $route => $configs)
+      {
+        $vars[$route] = array();
+        foreach ($configs as $paramStr => $config)
+        {
+          if ($paramStr != '*')
+          {
+            parse_str($paramStr, $params);
+            foreach ($params as $name => $value)
+            {
+              $vars[$route][$name] = 1;
+            }
+          }
+        }
+      }
+      $this->vars = $vars;
+      if ($this->cacheStorage)
+      {
+        $this->cacheStorage->set('page_seo_configuration_vars', $this->vars);
+      }
+    }
   }
 
   public function offsetExists($offset)
@@ -89,6 +143,23 @@ class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
     }
     else
     {
+      $reqParams = array();
+      if ($reqParamStr && count($this->vars[$parts[0]]) > 0)
+      {
+        parse_str($reqParamStr, $reqParams);
+        $vars = $this->vars[$parts[0]];
+
+        $reqParams = array_intersect_key($reqParams, $vars);
+        $reqParamStr = http_build_query($reqParams);
+
+        $pattern = $parts[0].'?'.$reqParamStr;
+
+        if (array_key_exists($pattern, $this->cache))
+        {
+          return $this->cache[$pattern];
+        }
+      }
+
       $best = null;
       foreach ($this->indexedConfiguration[$parts[0]] as $configParamStr => $config)
       {
@@ -99,7 +170,7 @@ class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
         }
         else
         {
-          $mark = $this->matchKey($reqParamStr, $configParamStr);
+          $mark = $this->matchKey($reqParams, $configParamStr);
         }
 
         if ($mark > 0 && $mark > $best)
@@ -118,30 +189,25 @@ class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
   }
 
   /**
-   * @param string $requestParamStr requested query params string
+   * @param string|array $requestParams requested query params string
    * @param string $configParamStr query params string from configuration
    * @return int matching mark
    */
-  private function matchKey($requestParamStr, $configParamStr)
+  private function matchKey($requestParams, $configParamStr)
   {
-    // no request params and 1+ config requirements
-    if (!$requestParamStr && $configParamStr)
+    if (is_string($requestParams))
     {
-      return 0;
-    }
-    // exact string matching
-    if ($requestParamStr == $configParamStr)
-    {
-      return strlen($requestParamStr) > 0 ? substr_count($requestParamStr, '&') + 1 : 0; // = number of vars in str
+      $requestParamStr = $requestParams;
+      /** @var $reqParams array|string[] */
+      parse_str($requestParamStr, $requestParams);
+
     }
 
-    /** @var $reqParams array|string[] */
-    parse_str($requestParamStr, $reqParams);
     /** @var $configParams array|string[] */
     parse_str($configParamStr, $configParams);
 
     // pattern requires vars but request does not have ones
-    if (count($reqParams) < count($configParams))
+    if (count($requestParams) < count($configParams))
     {
       return 0;
     }
@@ -150,12 +216,12 @@ class MatcherProviderDecorator implements \ArrayAccess, \IteratorAggregate
 
     foreach ($configParams as $var => $value)
     {
-      if (!array_key_exists($var, $reqParams))
+      if (!array_key_exists($var, $requestParams))
       {
         // var no found in $uri
         return 0;
       }
-      if ($value != $reqParams[$var])
+      if ($value != $requestParams[$var])
       {
         // var not matched
         return 0;

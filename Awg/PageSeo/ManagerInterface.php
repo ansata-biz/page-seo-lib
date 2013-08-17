@@ -12,36 +12,42 @@ use Awg\PageSeo\Render\RendererInterface;
 interface ManagerInterface extends \ArrayAccess, RendererInterface
 {
   /**
-   * @param string $routeName
+   * @param string $key
    * @return array
    */
-  public function getConfiguration($routeName);
+  public function getConfiguration($key);
 
   /**
-   * @param string $route
-   * @param mixed $context
-   * @return string
+   * @param string $key
+   * @return bool
    */
-  public function renderDescription($route, $context);
+  public function hasConfiguration($key);
 
   /**
-   * @param string $route
-   * @param mixed $context
+   * @param string $key
+   * @param mixed $vars
    * @return string
    */
-  public function renderKeywords($route, $context);
+  public function renderDescription($key, $vars);
 
   /**
-   * @param string $route
-   * @param mixed $context
+   * @param string $key
+   * @param mixed $vars
    * @return string
    */
-  public function renderText($route, $context);
+  public function renderKeywords($key, $vars);
 
   /**
-   * @param string $route
-   * @param mixed $context
+   * @param string $key
+   * @param mixed $vars
    * @return string
    */
-  public function renderTitle($route, $context);
+  public function renderText($key, $vars);
+
+  /**
+   * @param string $key
+   * @param mixed $vars
+   * @return string
+   */
+  public function renderTitle($key, $vars);
 }

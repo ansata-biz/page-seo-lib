@@ -77,8 +77,6 @@ class PlaceholderEngine implements EngineInterface
       throw new UndefinedPlaceholderException(sprintf('Item "%s" for "%s" does not exist', $item, is_array($object) ? 'Array' : $object));
     }
 
-    $class = get_class($object);
-
     // object property
     if (self::METHOD_CALL !== $type) {
       if (isset($object->$item) || array_key_exists($item, $object)) {
@@ -86,6 +84,8 @@ class PlaceholderEngine implements EngineInterface
         return $object->$item;
       }
     }
+
+    $class = get_class($object);
 
     // object method
     if (!isset(self::$cache[$class]['methods'])) {
@@ -95,16 +95,17 @@ class PlaceholderEngine implements EngineInterface
     foreach ($this->prefixes as $prefix)
     {
       $lcItem = strtolower($prefix.$item);
-      $lcCcItem = strtolower($prefix.preg_replace('|[-_]|', '', $item)); // lower case camel cased (removed _ and -)
+      $lcCcItem = strtolower($prefix.strtr($item, array('-'=>'', '_'=>''))); // lower case camel cased (removed _ and -)
+      $variants = ($lcItem == $lcCcItem) ? array($lcItem) : array($lcCcItem, $lcItem);
 
-      foreach (array($lcItem => $prefix.$item, $lcCcItem => $lcCcItem) as $key => $name)
+      foreach ($variants as $name)
       {
-        if (isset(self::$cache[$class]['methods'][$key])) {
+        if (isset(self::$cache[$class]['methods'][$name])) {
           $method = $name;
-        } elseif (isset(self::$cache[$class]['methods']['get'.$key])) {
+        } elseif (isset(self::$cache[$class]['methods']['get'.$name])) {
           $method = 'get'.$name;
-        } elseif (isset(self::$cache[$class]['methods']['is'.$key])) {
-          $method = 'is'.$item;
+        } elseif (isset(self::$cache[$class]['methods']['is'.$name])) {
+          $method = 'is'.$name;
         }
       }
 
