@@ -35,6 +35,15 @@ class Manager implements ManagerInterface
 
   /**
    * @param string $key
+   * @return bool
+   */
+  public function hasConfiguration($key)
+  {
+    return isset($this->configuration[$key]);
+  }
+
+  /**
+   * @param string $key
    * @throws Exception\UndefinedKeyException
    * @return array
    */
@@ -49,58 +58,58 @@ class Manager implements ManagerInterface
 
   /**
    * @param string $key
-   * @param mixed $context
+   * @param mixed $vars
    * @return string
    */
-  public function renderDescription($key, $context)
+  public function renderDescription($key, $vars)
   {
-    return $this->renderComponent($key, 'description', $context);
+    return $this->renderComponent($key, 'description', $vars);
   }
 
   /**
    * @param string $key
-   * @param mixed $context
+   * @param mixed $vars
    * @return string
    */
-  public function renderKeywords($key, $context)
+  public function renderKeywords($key, $vars)
   {
-    return $this->renderComponent($key, 'keywords', $context);
+    return $this->renderComponent($key, 'keywords', $vars);
   }
 
   /**
    * @param array|string $key
-   * @param mixed $context
+   * @param mixed $vars
    * @return string
    */
-  public function renderText($key, $context)
+  public function renderText($key, $vars)
   {
-    return $this->renderComponent($key, 'text', $context);
+    return $this->renderComponent($key, 'text', $vars);
   }
 
   /**
    * @param array|string $key
-   * @param mixed $context
+   * @param mixed $vars
    * @return string
    */
-  public function renderTitle($key, $context)
+  public function renderTitle($key, $vars)
   {
-    return $this->renderComponent($key, 'title', $context);
+    return $this->renderComponent($key, 'title', $vars);
   }
 
   /**
    * @param string $key route name
    * @param string $component
-   * @param mixed $context
+   * @param mixed $vars
    *
    * @throws Exception\UndefinedPlaceholderException|\Exception
    * @return string
    */
-  public function renderComponent($key, $component, $context)
+  public function renderComponent($key, $component, $vars)
   {
     try
     {
       $configuration = $this->getConfiguration($key);
-      return $this->renderer->renderComponent($configuration, $component, $context);
+      return $this->renderer->renderComponent($configuration, $component, $vars);
     }
     catch (UndefinedPlaceholderException $e)
     {
@@ -122,32 +131,32 @@ class Manager implements ManagerInterface
   }
 
   /**
-   * @param string $string
-   * @param mixed $context
+   * @param string $template
+   * @param mixed $vars
    * @return string
    */
-  public function renderString($string, $context)
+  public function renderString($template, $vars)
   {
-    return $this->renderer->renderString($string, $context);
+    return $this->renderer->renderString($template, $vars);
   }
 
-  public function offsetExists($offset)
+  public function offsetExists($key)
   {
-    return isset($this->configuration[$offset]);
+    return isset($this->configuration[$key]);
   }
 
-  public function offsetGet($offset)
+  public function offsetGet($key)
   {
-    return $this->getConfiguration($offset);
+    return $this->getConfiguration($key);
   }
 
-  public function offsetSet($offset, $value)
+  public function offsetSet($key, $value)
   {
-    $this->configuration[$offset] = $value;
+    $this->configuration[$key] = $value;
   }
 
-  public function offsetUnset($offset)
+  public function offsetUnset($key)
   {
-    unset($this->configuration[$offset]);
+    unset($this->configuration[$key]);
   }
 }
