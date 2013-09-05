@@ -19,8 +19,8 @@ class InheritanceArrayProvider extends \ArrayObject
   function __construct($config, $defaults = array())
   {
     $processed = array();
-    $defaults = (array) $defaults;
-    foreach ($config as $key => $value)
+    $defaults = (array)$defaults;
+    foreach (array_keys($config) + array_keys($defaults) as $key)
     {
       $processed[$key] = $this->getRouteConfigurationArrayInherited($config, $defaults, $key);
     }
@@ -38,16 +38,10 @@ class InheritanceArrayProvider extends \ArrayObject
    * @throws \Awg\PageSeo\Exception\UndefinedKeyException
    * @return array
    */
-  private function getRouteConfigurationArrayInherited(&$configuration, &$defaults, $routeName, $stack = array())
+  private function getRouteConfigurationArrayInherited($configuration, $defaults, $routeName, $stack = array())
   {
-    if (!isset($configuration[$routeName]))
-    {
-      // act like a regular array when trying to get undefined key
-      trigger_error(sprintf('Array key "%s" does not exist', $routeName), E_USER_WARNING);
-      return null;
-    }
-
-    $config = $configuration[$routeName];
+    $config = isset($configuration[$routeName]) ? $configuration[$routeName] : array();
+    $defaults = isset($defaults[$routeName]) ? $defaults[$routeName] : array();
     // if there is inheritance
     if ($config && isset($config['inherit']) && $config['inherit'][0] == '@')
     {
