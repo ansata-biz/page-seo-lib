@@ -47,11 +47,10 @@ class InheritanceArrayProvider extends \ArrayObject
       return null;
     }
 
-    $config = &$configuration[$routeName];
+    $config = $configuration[$routeName];
     // if there is inheritance
     if ($config && isset($config['inherit']) && $config['inherit'][0] == '@')
     {
-      $config = array('inherit' => $config['inherit']);
       // parent route name
       $inheritFrom = substr($config['inherit'], 1);
       // if route is already in an inheritance chain
