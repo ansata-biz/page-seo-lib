@@ -20,8 +20,11 @@ class InheritanceArrayProvider extends \ArrayObject
   {
     $processed = array();
     $defaults = (array)$defaults;
-    foreach (array_keys($config) + array_keys($defaults) as $key)
+    foreach (array_unique(array_merge(array_keys($config), array_keys($defaults))) as $key)
     {
+      if (!isset($config[$key]) && isset($defaults[$key])) {
+        $config[$key] = $defaults[$key];
+      }
       $processed[$key] = $this->getRouteConfigurationArrayInherited($config, $defaults, $key);
     }
 
@@ -30,7 +33,7 @@ class InheritanceArrayProvider extends \ArrayObject
 
   /**
    * @param $configuration
-   * @param array $defaults
+   * @param array $_default
    * @param string $routeName
    * @param array $stack
    *
@@ -40,13 +43,13 @@ class InheritanceArrayProvider extends \ArrayObject
    */
   private function getRouteConfigurationArrayInherited($configuration, $defaults, $routeName, $stack = array())
   {
-    $config = isset($configuration[$routeName]) ? $configuration[$routeName] : array();
-    $defaults = isset($defaults[$routeName]) ? $defaults[$routeName] : array();
+    $_default = isset($defaults[$routeName]) ? $defaults[$routeName] : array();
+    $_config = isset($configuration[$routeName]) ? $configuration[$routeName] : $_default;
     // if there is inheritance
-    if ($config && isset($config['inherit']) && $config['inherit'][0] == '@')
+    if ($_config && isset($_config['inherit']) && $_config['inherit'][0] == '@')
     {
       // parent route name
-      $inheritFrom = substr($config['inherit'], 1);
+      $inheritFrom = substr($_config['inherit'], 1);
       // if route is already in an inheritance chain
       if (isset($stack[$inheritFrom]))
       {
@@ -69,9 +72,9 @@ class InheritanceArrayProvider extends \ArrayObject
       // go deeper
       $parent = $this->getRouteConfigurationArrayInherited($configuration, $defaults, $inheritFrom, $stack);
       // merge inherited config with own
-      return array_merge($parent, $config);
+      return array_merge($parent, $_config);
     }
     // merge default config with own
-    return array_merge($defaults, $config);
+    return array_merge($_default, $_config);
   }
 }

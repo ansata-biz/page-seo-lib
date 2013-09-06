@@ -117,6 +117,9 @@ class InheritanceArrayProviderTest extends \PHPUnit_Framework_TestCase
       'route_a' => array(
         'description' => 'Lorem ipsum',
         'meta' => 'unit test'
+      ),
+      'route_c' => array(
+        'description' => 'Route C'
       )
     );
     $config = new InheritanceArrayProvider($arr, $default);
@@ -124,5 +127,6 @@ class InheritanceArrayProviderTest extends \PHPUnit_Framework_TestCase
     $this->assertEquals($config['route_a']['title'], $arr['route_a']['title'], 'Using defaults does not affect own route config property.');
     $this->assertEquals($config['route_a']['description'], $default['route_a']['description'], 'Using defaults specifies default route config property.');
     $this->assertEquals($config['route_b']['description'], $arr['route_b']['description'], 'Using defaults and inheritance does not conflict.');
+    $this->assertEquals($config['route_c']['description'], $default['route_c']['description'], 'Defaults must appear in the configuration even if missing in config.');
   }
 }
