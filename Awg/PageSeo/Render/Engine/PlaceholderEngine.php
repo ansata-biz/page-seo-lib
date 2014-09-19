@@ -34,7 +34,7 @@ class PlaceholderEngine implements EngineInterface
    * @param mixed   $object            The object or array from where to get the item
    * @param mixed   $item              The item to get from the array or object
    * @param array   $arguments         An array of arguments to pass if the item is an object method
-   * @param string  $type              The type of attribute (@see rcStringUtils::ANY_CALL and others)
+   * @param string  $type              The type of attribute (@see PlaceholderEngine::ANY_CALL and others)
    * @param Boolean $ignoreStrictCheck Whether to ignore the strict attribute check or not
    *
    * @throws \Awg\PageSeo\Exception\UndefinedPlaceholderException
